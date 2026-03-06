@@ -1,0 +1,79 @@
+{
+  "generated_at": "2026-03-06T08:18:28Z",
+  "device": "cuda:0",
+  "gpu_name": "NVIDIA GeForce RTX 3090 Ti",
+  "gpu_memory_gb": 25.8,
+  "n_gpus_available": 2,
+  "benchmarks": [
+    {
+      "name": "onset_map_gpu",
+      "grid_size": 500,
+      "total_points": 250000,
+      "memory_on_count": 159824,
+      "memory_off_count": 90176,
+      "elapsed_seconds": 1.95,
+      "device": "cuda:0",
+      "pass": true
+    },
+    {
+      "name": "large_network_matched_present",
+      "n_nodes": 2000,
+      "n_paths": 1998,
+      "n_edges": 3996,
+      "full_theta_R_gap": 6.283185307179586,
+      "principal_theta_R_gap": 1.4358220763381682e-17,
+      "full_G_gap": 0.9710498931392445,
+      "principal_G_gap": 6.035139937500419e-05,
+      "full_suppression_gap": 0.0020520572168333732,
+      "max_abs_G": 1.0000307468024312,
+      "elapsed_seconds": 35.47,
+      "device": "cuda:0",
+      "pass": true
+    },
+    {
+      "name": "ablation_sweep",
+      "modes": {
+        "principal": {
+          "theta_R_gap": 7.112797283493745e-14,
+          "G_gap": 0.2090444232164784,
+          "suppression_gap": 5.889181473858962e-29,
+          "S_a": 0.8942809614435263,
+          "S_b": 0.9604667577520751,
+          "pi_a_a": 1.5707963267948966,
+          "pi_a_b": 1.5707963267948966
+        },
+        "lift_only": {
+          "theta_R_gap": 6.283185307179657,
+          "G_gap": 0.2124676443559621,
+          "suppression_gap": 0.0946965690360104,
+          "S_a": 0.8942809614435263,
+          "S_b": 0.9994378616201267,
+          "pi_a_a": 1.5707963267948966,
+          "pi_a_b": 1.5707963267948966
+        },
+        "lift_ruler": {
+          "theta_R_gap": 6.283185307179657,
+          "G_gap": 0.2124676443559621,
+          "suppression_gap": 0.10805503055594722,
+          "S_a": 0.8942809614435263,
+          "S_b": 0.9994378616201267,
+          "pi_a_a": 1.724981071129429,
+          "pi_a_b": 1.7348418415928146
+        },
+        "full": {
+          "theta_R_gap": 6.283185307179659,
+          "G_gap": 0.25856546303700756,
+          "suppression_gap": 0.10359844166238195,
+          "S_a": 0.8942809614435263,
+          "S_b": 1.0094738699794608,
+          "pi_a_a": 1.724981071129429,
+          "pi_a_b": 1.7353886320919627
+        }
+      },
+      "elapsed_seconds": 2.58,
+      "device": "cuda:0",
+      "pass": true
+    }
+  ],
+  "all_passed": true
+}
