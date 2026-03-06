@@ -23,6 +23,7 @@ import csv
 import json
 import math
 import time
+import threading
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -553,6 +554,102 @@ def onset_map_benchmark(grid_size: int, device: torch.device) -> dict:
     }
 
 
+def onset_map_dual_gpu(grid_size: int) -> dict:
+    """Split onset sweep across GPU 0 and GPU 1, merge results."""
+    pi_0_vals = np.linspace(math.pi / 6, 5 * math.pi / 6, grid_size)
+    mid = grid_size // 2
+
+    results = [None, None]
+
+    def run_half(gpu_id, pi_slice, slot):
+        dev = torch.device(f"cuda:{gpu_id}")
+        omega_vals = np.linspace(4.0, 24.0, grid_size)
+        n_sub = len(pi_slice)
+        N_pairs = n_sub * grid_size
+        B = 2 * N_pairs
+
+        pi_0_per_pair = []
+        omega_end_per_pair = []
+        for p0 in pi_slice:
+            for om in omega_vals:
+                pi_0_per_pair.append(p0)
+                omega_end_per_pair.append(om)
+
+        pi_0_all = torch.tensor(pi_0_per_pair + pi_0_per_pair,
+                                dtype=torch.float64, device=dev)
+        omega_end_t = torch.tensor(omega_end_per_pair, dtype=torch.float64, device=dev)
+
+        batch_net = BatchedDiamondNetwork(B, dev, mode="full",
+                                          pi_0_values=pi_0_all, seed=99)
+        dt = 0.01
+        const_drive = torch.full((B,), 1.0 + 0j, dtype=torch.complex128, device=dev)
+
+        for _ in range(30):
+            batch_net.step(const_drive)
+
+        T_chirp = 49 * dt
+        for k in range(50):
+            t = k * dt
+            phase = 2.0 * t + 0.5 * (omega_end_t - 2.0) * t ** 2 / T_chirp
+            drive = const_drive.clone()
+            drive[N_pairs:] = torch.exp(1j * phase.to(torch.complex128))
+            batch_net.step(drive)
+
+        for _ in range(30):
+            batch_net.step(const_drive)
+
+        theta_R_a = batch_net.theta_R[:N_pairs]
+        theta_R_b = batch_net.theta_R[N_pairs:]
+        theta_gap = (theta_R_a - theta_R_b).abs().max(dim=1).values.cpu().numpy()
+
+        G_a = batch_net.G[:N_pairs]
+        G_b = batch_net.G[N_pairs:]
+        pa_a = batch_net.pi_a[:N_pairs].unsqueeze(1)
+        pa_b = batch_net.pi_a[N_pairs:].unsqueeze(1)
+        supp_a = batch_net.lambda_s * G_a * torch.sin(theta_R_a / (2 * pa_a)) ** 2
+        supp_b = batch_net.lambda_s * G_b * torch.sin(theta_R_b / (2 * pa_b)) ** 2
+        supp_gap = (supp_a - supp_b).abs().max(dim=1).values.cpu().numpy()
+        memory_on = (theta_gap > math.pi) & (supp_gap > 1e-3)
+
+        rows = []
+        idx = 0
+        for p0 in pi_slice:
+            for om in omega_vals:
+                rows.append({
+                    "pi_0": float(p0), "omega_end": float(om),
+                    "theta_R_gap": float(theta_gap[idx]),
+                    "suppression_gap": float(supp_gap[idx]),
+                    "memory_on": bool(memory_on[idx]),
+                })
+                idx += 1
+        results[slot] = rows
+
+    t0 = time.time()
+    t1 = threading.Thread(target=run_half, args=(0, pi_0_vals[:mid], 0))
+    t2 = threading.Thread(target=run_half, args=(1, pi_0_vals[mid:], 1))
+    t1.start(); t2.start()
+    t1.join(); t2.join()
+    elapsed = time.time() - t0
+
+    all_rows = results[0] + results[1]
+    total = len(all_rows)
+    on_count = sum(1 for r in all_rows if r["memory_on"])
+
+    print(f"  dual-GPU sweep done in {elapsed:.1f}s (GPU 0 + GPU 1)")
+
+    return {
+        "name": "onset_map_dual_gpu",
+        "grid_size": grid_size,
+        "total_points": total,
+        "memory_on_count": on_count,
+        "memory_off_count": total - on_count,
+        "elapsed_seconds": round(elapsed, 2),
+        "device": "cuda:0+cuda:1",
+        "pass": on_count > 0 and (total - on_count) > 0,
+        "rows": all_rows,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Benchmark 2: Large-network matched-present divergence
 # ---------------------------------------------------------------------------
@@ -660,6 +757,8 @@ def main():
                         help="GPU index to use (default 0)")
     parser.add_argument("--output-dir", type=str, default=None,
                         help="Output directory (default: benchmarks/)")
+    parser.add_argument("--dual-gpu", action="store_true",
+                        help="Split onset map across both GPUs")
     args = parser.parse_args()
 
     # Device setup
@@ -692,9 +791,14 @@ def main():
 
     # --- Benchmark 1: Onset map ---
     print(f"\n{'='*60}")
-    print(f"Benchmark 1: Onset map ({args.onset_grid}x{args.onset_grid} sweep)")
-    print(f"{'='*60}")
-    onset = onset_map_benchmark(args.onset_grid, device)
+    if args.dual_gpu and n_gpus >= 2:
+        print(f"Benchmark 1: Onset map ({args.onset_grid}x{args.onset_grid} sweep) — DUAL GPU")
+        print(f"{'='*60}")
+        onset = onset_map_dual_gpu(args.onset_grid)
+    else:
+        print(f"Benchmark 1: Onset map ({args.onset_grid}x{args.onset_grid} sweep)")
+        print(f"{'='*60}")
+        onset = onset_map_benchmark(args.onset_grid, device)
     report["benchmarks"].append({k: v for k, v in onset.items() if k != "rows"})
     print(f"  Result: {onset['memory_on_count']} ON / {onset['memory_off_count']} OFF "
           f"in {onset['elapsed_seconds']}s — {'PASS' if onset['pass'] else 'FAIL'}")

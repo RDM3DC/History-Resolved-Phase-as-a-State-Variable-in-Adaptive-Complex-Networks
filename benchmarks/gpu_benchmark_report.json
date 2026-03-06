@@ -1,32 +1,32 @@
 {
-  "generated_at": "2026-03-06T08:18:28Z",
+  "generated_at": "2026-03-06T08:26:15Z",
   "device": "cuda:0",
   "gpu_name": "NVIDIA GeForce RTX 3090 Ti",
   "gpu_memory_gb": 25.8,
   "n_gpus_available": 2,
   "benchmarks": [
     {
-      "name": "onset_map_gpu",
-      "grid_size": 500,
-      "total_points": 250000,
-      "memory_on_count": 159824,
-      "memory_off_count": 90176,
-      "elapsed_seconds": 1.95,
-      "device": "cuda:0",
+      "name": "onset_map_dual_gpu",
+      "grid_size": 1000,
+      "total_points": 1000000,
+      "memory_on_count": 639982,
+      "memory_off_count": 360018,
+      "elapsed_seconds": 5.08,
+      "device": "cuda:0+cuda:1",
       "pass": true
     },
     {
       "name": "large_network_matched_present",
-      "n_nodes": 2000,
-      "n_paths": 1998,
-      "n_edges": 3996,
+      "n_nodes": 500,
+      "n_paths": 498,
+      "n_edges": 996,
       "full_theta_R_gap": 6.283185307179586,
-      "principal_theta_R_gap": 1.4358220763381682e-17,
-      "full_G_gap": 0.9710498931392445,
-      "principal_G_gap": 6.035139937500419e-05,
-      "full_suppression_gap": 0.0020520572168333732,
-      "max_abs_G": 1.0000307468024312,
-      "elapsed_seconds": 35.47,
+      "principal_theta_R_gap": 5.827450973102262e-17,
+      "full_G_gap": 0.590686193142981,
+      "principal_G_gap": 0.00024534112014392237,
+      "full_suppression_gap": 0.03319164428085061,
+      "max_abs_G": 1.0001304080826539,
+      "elapsed_seconds": 3.92,
       "device": "cuda:0",
       "pass": true
     },
@@ -70,7 +70,7 @@
           "pi_a_b": 1.7353886320919627
         }
       },
-      "elapsed_seconds": 2.58,
+      "elapsed_seconds": 2.4,
       "device": "cuda:0",
       "pass": true
     }
