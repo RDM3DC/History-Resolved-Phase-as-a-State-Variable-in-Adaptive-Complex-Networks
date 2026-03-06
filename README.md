@@ -23,8 +23,10 @@ modes that let you isolate the contribution of each component.
    - [Graph factories](#graph-factories)
    - [Drive protocols](#drive-protocols)
    - [Low-level modules](#low-level-modules)
-8. [Running the tests](#running-the-tests)
-9. [License](#license)
+8. [Documentation](#documentation)
+9. [Benchmarks](#benchmarks)
+10. [Running the tests](#running-the-tests)
+11. [License](#license)
 
 ---
 
@@ -307,6 +309,47 @@ The following modules are available for direct use or extension:
 | `hrphasenet.entropy` | `entropy_step`, `ruler_step`, `transport_dissipation`, `branch_slip_term`, `EntropyRulerState` |
 | `hrphasenet.conductance` | `conductance_step`, `apply_conductance_clamps`, `alpha_G`, `mu_G`, `suppression_term` |
 | `hrphasenet.solver` | `nodal_solve`, `edge_current`, `build_admittance_matrix` |
+
+---
+
+## Documentation
+
+The `docs/` directory contains the full research documentation:
+
+| Document | Description |
+|----------|-------------|
+| [White Paper](docs/white_paper.md) | Comprehensive 13-section white paper covering the full theory, empirical results, safe claims, and next steps |
+| [Derivation](docs/derivation.md) | Step-by-step derivation of the history-resolved phase conductance update equation |
+| [Benchmark Report](docs/benchmark_report.md) | Summary of the 9-benchmark validation suite results |
+| [Parity Lock Table](docs/parity_lock_deformation_table.md) | Parity-lock deformation data under varying drive amplitudes |
+| [TopEquations Submission](docs/topequations_submission.md) | Full submission record for the TopEquations leaderboard (score: 102) |
+
+---
+
+## Benchmarks
+
+The `benchmarks/` directory contains the validation infrastructure:
+
+```bash
+# Run the full 9-benchmark suite
+python benchmarks/run_benchmarks.py
+```
+
+Benchmarks included:
+
+| Benchmark | What it tests |
+|-----------|---------------|
+| **monodromy** | Parity-lock deformation under varying amplitudes |
+| **freeze_near_zero** | Phase freeze for sub-threshold currents |
+| **boundedness** | Conductance stays bounded (Re(G) > 0) |
+| **ablation_modes** | Score ordering: full > lift_ruler > lift_only > principal |
+| **history_divergence** | Reversal protocol divergence from principal branch |
+| **matched_present_state_separation** | Identical present states diverge when history differs |
+| **operational_memory_gap** | Memory gap between full and principal modes |
+| **memory_threshold_sweep** | Memory retention across ruler-width sweep |
+| **memory_onset_phase_diagram** | Phase diagram of memory onset in (α₀, κ) space |
+
+Pre-computed results are in `benchmarks/benchmark_report.json`.
 
 ---
 
